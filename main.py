@@ -2,7 +2,7 @@ import backtrackingPuzzleSolver
 
 
 sudoku = backtrackingPuzzleSolver.Sudoku()
-board = [[-1 for x in range(3)] for x in range(3)]
+board = backtrackingPuzzleSolver.board(3, 3, -1)
 bps = backtrackingPuzzleSolver.BPS()
 bps.solve(sudoku, board, None)
 

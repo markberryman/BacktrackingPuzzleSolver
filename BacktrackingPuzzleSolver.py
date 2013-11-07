@@ -5,6 +5,7 @@
 # todo - better way to indicate no possible move other than length check of dict?
 # todo - for sudoku, let's be explicit about the init value, min and max value; too much of a hack otherwise
 # todo - advantage of using numpy matrix over 2-d array made by lists?
+# todo - instead of board.rows property; make the board obj iterable?
 import copy
 
 
@@ -71,8 +72,8 @@ class Sudoku(TwoDimBoardPuzzle):
         # we need this info to determine the next move
         
         # checking for dupe in same column and row
-        result = ((move["value"] not in [row[move["col"]] for row in board]) and
-                  (move["value"] not in board[move["row"]]))
+        result = ((move["value"] not in [row[move["col"]] for row in board.rows]) and
+                  (move["value"] not in board.rows[move["row"]]))
 
         move["is_valid"] = result
 
@@ -80,8 +81,8 @@ class Sudoku(TwoDimBoardPuzzle):
 
     def is_solved(self, board):
         # board filled with valid values (i.e., no initialization values present)
-        for row in board:
-            if (-1 in row):
+        for row in board.rows:
+            if (board.init_value in row):
                 return False
 
         return True
@@ -98,7 +99,7 @@ class Sudoku(TwoDimBoardPuzzle):
             # if the last move was not valid, we'll stay 
             # in the same square but try the next largest number (if possible)
             if (last_move["is_valid"] is False):
-                if (last_move["value"] < len(board)):
+                if (last_move["value"] < board.width):
                     # try the next value for this current location
                     next_move["col"] = last_move["col"]
                     next_move["row"] = last_move["row"]
@@ -107,7 +108,7 @@ class Sudoku(TwoDimBoardPuzzle):
             else:
                 # last move was valid, proceed to next square
                 # bump up the column unless we're at the end of a row
-                if (last_move["col"] == (len(board) - 1)):
+                if (last_move["col"] == (board.width - 1)):
                     # at end of row
                     next_move["col"] = 0
                     next_move["row"] = last_move["row"] + 1
@@ -121,11 +122,35 @@ class Sudoku(TwoDimBoardPuzzle):
         return next_move
         
     def make_move(self, move, board):
-        board[move["row"]][move["col"]] = move["value"]
+        board.rows[move["row"]][move["col"]] = move["value"]
 
     def print_board(self, board):
-        for row in range(len(board)):
-            for col in range(len(board[0])):
-                print("{} ".format(board[row][col]), end="")
+        for row in range(board.height):
+            for col in range(board.width):
+                print("{} ".format(board.rows[row][col]), end="")
 
             print()
+
+
+class board(object):
+    def __init__(self, width, height, init_value):
+        self._board = [[init_value for x in range(width)] for x in range(height)]
+        self._width = width
+        self._height = height
+        self._init_value = init_value
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    @property
+    def init_value(self):
+        return self._init_value
+
+    @property
+    def rows(self):
+        return self._board
