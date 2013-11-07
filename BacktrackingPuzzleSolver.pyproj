@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>1a356334-4e1e-4861-a774-78c9a07faa5e</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>BacktrackingPuzzleSolver.py</StartupFile>
+    <StartupFile>main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,7 +22,8 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="BacktrackingPuzzleSolver.py" />
+    <Compile Include="backtrackingPuzzleSolver.py" />
+    <Compile Include="main.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
 </Project>
