@@ -1,6 +1,10 @@
+# todo - bug w/ sudoku board of size 3 x 3
 # todo - figure out how to avoid passing entire board around w/ each attempt
 # todo - make sense to consolidate move validity check w/ making the move?
 # todo - move board creation to the puzzle logic?
+# todo - better way to indicate no possible move other than length check of dict?
+# todo - for sudoku, let's be explicit about the init value, min and max value; too much of a hack otherwise
+# todo - advantage of using numpy matrix over 2-d array made by lists?
 import copy
 
 
@@ -13,10 +17,9 @@ class BPS(object):
             return True
 
         while (True):
-            # next move based on last move
             move = puzzle.get_next_move(last_move, board)
 
-            if (move is not None):
+            if (len(move) != 0):
                 is_move_valid = puzzle.is_move_valid(move, board)
 
                 if (is_move_valid):
@@ -63,15 +66,17 @@ class TwoDimBoardPuzzle(object):
 
 class Sudoku(TwoDimBoardPuzzle):
     def is_move_valid(self, move, board):
-        # checking for dupe in same column
-        if (move["value"] in [row[move["col"]] for row in board]):
-            return False
+        # besides checking the move's validity,
+        # we're going to flag the move as well b/c
+        # we need this info to determine the next move
         
-        # checking for dupe in same row
-        if (move["value"] in board[move["row"]]):
-            return False
+        # checking for dupe in same column and row
+        result = ((move["value"] not in [row[move["col"]] for row in board]) and
+                  (move["value"] not in board[move["row"]]))
 
-        return True
+        move["is_valid"] = result
+
+        return result
 
     def is_solved(self, board):
         # board filled with valid values (i.e., no initialization values present)
@@ -84,32 +89,34 @@ class Sudoku(TwoDimBoardPuzzle):
     def get_next_move(self, last_move, board):
         next_move = {}
 
-        # might be the first move so no last move
         if (last_move is None):
+            # first move
             next_move["col"] = 0
             next_move["row"] = 0
             next_move["value"] = 1
         else:
-            # exhaust #'s for a location before moving on
-            if (last_move["value"] == len(board)):
-                # need to move to next location
-                if (last_move["col"] < (len(board) - 1)):
-                    # moving a column over
+            # if the last move was not valid, we'll stay 
+            # in the same square but try the next largest number (if possible)
+            if (last_move["is_valid"] is False):
+                if (last_move["value"] < len(board)):
+                    # try the next value for this current location
+                    next_move["col"] = last_move["col"]
+                    next_move["row"] = last_move["row"]
+                    next_move["value"] = last_move["value"] + 1
+                # else, no next move for this square; out of values to try
+            else:
+                # last move was valid, proceed to next square
+                # bump up the column unless we're at the end of a row
+                if (last_move["col"] == (len(board) - 1)):
+                    # at end of row
+                    next_move["col"] = 0
+                    next_move["row"] = last_move["row"] + 1
+                else:
+                    # not at end of row, bump up column
                     next_move["col"] = last_move["col"] + 1
                     next_move["row"] = last_move["row"]
-                    next_move["value"] = 1
-                else:
-                    # moving a row down if possible
-                    if (last_move["row"] < (len(board[0]) - 1)):
-                        next_move["col"] = last_move["col"]
-                        next_move["row"] = last_move["row"] + 1
-                        next_move["value"] = 1
-                    # else, we've gone off the end of the board
-            else:
-                # try the next value for this current location
-                next_move["col"] = last_move["col"]
-                next_move["row"] = last_move["row"]
-                next_move["value"] = last_move["value"] + 1
+                    
+                next_move["value"] = 1
 
         return next_move
         
