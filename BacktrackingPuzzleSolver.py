@@ -12,40 +12,45 @@ import copy
 class BPS(object):
     """Given a 2-D board type puzzle, solves it using recursive backtracking."""
 
-    def solve(self, puzzle, board, last_move):
+    def solve(self, puzzle, board, move):
         if (puzzle.is_solved(board)):
             puzzle.print_board(board)
             return True
 
         while (True):
-            puzzle.print_board(board)
-            move = puzzle.get_next_move(last_move, board)
+            #puzzle.print_board(board)
+            move = puzzle.get_next_move(move, board)
 
             if (len(move) != 0):
-                print("Trying move: row - {}, col - {}, val - {}".format(move["row"], move["col"], move["value"]))
+                #print("Trying move: row - {}, col - {}, val - {}".format(move["row"], move["col"], move["value"]))
 
-                input("enter to continue...")
+                is_move_good = puzzle.is_move_valid(move, board)
 
-                is_move_valid = puzzle.is_move_valid(move, board)
+                if (is_move_good):
+                    #print("Move valid. Going to recurse.")
 
-                if (is_move_valid):
+                    puzzle.make_move(move, board)
+
                     # need to copy the board so we don't have separate
                     # solution investigations stomp on each other
                     new_board = copy.deepcopy(board)
-
-                    puzzle.make_move(move, new_board)
 
                     was_puzzle_solved = self.solve(puzzle, new_board, move)
 
                     if (was_puzzle_solved):
                         return True
-                    # else, we continue getting the next move
+                    else:
+                        # get the next move as the last one turned
+                        # out to be invalid
+                        move["is_good"] = False
                 else:
                     # move not valid, going to try next move
-                    last_move = move
+                    #print("Move *not* valid.")
+                    pass
             else:
                 # we're stuck, can't make another move; bail on this
                 # solution search path
+                #print("Stuck. Backtracking...")
                 return False
             
         # made it here, means we couldn't solve the puzzle
@@ -54,7 +59,7 @@ class BPS(object):
 
 
 class TwoDimBoardPuzzle(object):
-    def is_move_valid(self, move, board):
+    def is_move_good(self, move, board):
         raise NotImplementedError()
 
     def is_solved(self, board):
@@ -77,10 +82,15 @@ class Sudoku(TwoDimBoardPuzzle):
         # we need this info to determine the next move
         
         # checking for dupe in same column and row
-        result = ((move["value"] not in [row[move["col"]] for row in board.rows]) and
-                  (move["value"] not in board.rows[move["row"]]))
+        col_conflict = (move["value"] not in [row[move["col"]] for row in board.rows])
+        row_conflict = (move["value"] not in board.rows[move["row"]])
 
-        move["is_valid"] = result
+        result = col_conflict and row_conflict
+
+        #result = ((move["value"] not in [row[move["col"]] for row in board.rows]) and
+        #          (move["value"] not in board.rows[move["row"]]))
+
+        move["is_good"] = result
 
         return result
 
@@ -92,10 +102,10 @@ class Sudoku(TwoDimBoardPuzzle):
 
         return True
 
-    def get_next_move(self, last_move, board):
+    def get_next_move(self, move, board):
         next_move = {}
 
-        if (last_move is None):
+        if (move is None):
             # first move
             next_move["col"] = 0
             next_move["row"] = 0
@@ -103,24 +113,24 @@ class Sudoku(TwoDimBoardPuzzle):
         else:
             # if the last move was not valid, we'll stay 
             # in the same square but try the next largest number (if possible)
-            if (last_move["is_valid"] is False):
-                if (last_move["value"] < board.width):
+            if (move["is_good"] is False):
+                if (move["value"] < board.width):
                     # try the next value for this current location
-                    next_move["col"] = last_move["col"]
-                    next_move["row"] = last_move["row"]
-                    next_move["value"] = last_move["value"] + 1
+                    next_move["col"] = move["col"]
+                    next_move["row"] = move["row"]
+                    next_move["value"] = move["value"] + 1
                 # else, no next move for this square; out of values to try
             else:
                 # last move was valid, proceed to next square
                 # bump up the column unless we're at the end of a row
-                if (last_move["col"] == (board.width - 1)):
+                if (move["col"] == (board.width - 1)):
                     # at end of row
                     next_move["col"] = 0
-                    next_move["row"] = last_move["row"] + 1
+                    next_move["row"] = move["row"] + 1
                 else:
                     # not at end of row, bump up column
-                    next_move["col"] = last_move["col"] + 1
-                    next_move["row"] = last_move["row"]
+                    next_move["col"] = move["col"] + 1
+                    next_move["row"] = move["row"]
                     
                 next_move["value"] = 1
 
