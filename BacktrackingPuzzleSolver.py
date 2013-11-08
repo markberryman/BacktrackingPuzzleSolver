@@ -18,9 +18,14 @@ class BPS(object):
             return True
 
         while (True):
+            puzzle.print_board(board)
             move = puzzle.get_next_move(last_move, board)
 
             if (len(move) != 0):
+                print("Trying move: row - {}, col - {}, val - {}".format(move["row"], move["col"], move["value"]))
+
+                input("enter to continue...")
+
                 is_move_valid = puzzle.is_move_valid(move, board)
 
                 if (is_move_valid):
