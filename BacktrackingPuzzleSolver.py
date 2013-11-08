@@ -125,18 +125,7 @@ class Sudoku(TwoDimBoardPuzzle):
                 square_to_check_idx += 1
 
             next_move["row"] = square_to_check_idx // board.height
-            next_move["col"] = square_to_check_idx % board.width
-
-            # bump up the column unless we're at the end of a row
-            #if (move["col"] == (board.width - 1)):
-            #    # at end of row
-            #    next_move["col"] = 0
-            #    next_move["row"] = move["row"] + 1
-            #else:
-            #    # not at end of row, bump up column
-            #    next_move["col"] = move["col"] + 1
-            #    next_move["row"] = move["row"]
-                    
+            next_move["col"] = square_to_check_idx % board.width                    
             next_move["value"] = 1
 
         return next_move
