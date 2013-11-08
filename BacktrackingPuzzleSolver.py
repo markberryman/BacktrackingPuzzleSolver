@@ -1,4 +1,4 @@
-# todo - bug w/ sudoku board of size 3 x 3
+# todo - optimize by specifying subset of possible values for a square based on what's already been used
 # todo - figure out how to avoid passing entire board around w/ each attempt
 # todo - make sense to consolidate move validity check w/ making the move?
 # todo - move board creation to the puzzle logic?
@@ -24,7 +24,7 @@ class BPS(object):
             move = puzzle.get_next_move(move, board)
 
             if (len(move) != 0):
-                #print("Trying move: row - {}, col - {}, val - {}".format(move["row"], move["col"], move["value"]))
+                print("Trying move: row - {}, col - {}, val - {}".format(move["row"], move["col"], move["value"]))
 
                 is_move_good = puzzle.is_move_valid(move, board)
 
@@ -47,7 +47,7 @@ class BPS(object):
                         move["is_good"] = False
                 else:
                     # move not valid, going to try next move
-                    #print("Move *not* valid.")
+                    print("Move *not* good.")
                     pass
             else:
                 # we're stuck, can't make another move; bail on this
