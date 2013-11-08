@@ -18,7 +18,9 @@ class BPS(object):
             return True
 
         while (True):
-            #puzzle.print_board(board)
+            print("*****************")
+            puzzle.print_board(board)
+            print("*****************")
             move = puzzle.get_next_move(move, board)
 
             if (len(move) != 0):
@@ -105,34 +107,37 @@ class Sudoku(TwoDimBoardPuzzle):
     def get_next_move(self, move, board):
         next_move = {}
 
-        if (move is None):
-            # first move
-            next_move["col"] = 0
-            next_move["row"] = 0
-            next_move["value"] = 1
+        # if the last move was not valid, we'll stay 
+        # in the same square but try the next largest number (if possible)
+        if (move["is_good"] is False):
+            if (move["value"] < board.width):
+                # try the next value for this current location
+                next_move["col"] = move["col"]
+                next_move["row"] = move["row"]
+                next_move["value"] = move["value"] + 1
+            # else, no next move for this square; out of values to try
         else:
-            # if the last move was not valid, we'll stay 
-            # in the same square but try the next largest number (if possible)
-            if (move["is_good"] is False):
-                if (move["value"] < board.width):
-                    # try the next value for this current location
-                    next_move["col"] = move["col"]
-                    next_move["row"] = move["row"]
-                    next_move["value"] = move["value"] + 1
-                # else, no next move for this square; out of values to try
-            else:
-                # last move was valid, proceed to next square
-                # bump up the column unless we're at the end of a row
-                if (move["col"] == (board.width - 1)):
-                    # at end of row
-                    next_move["col"] = 0
-                    next_move["row"] = move["row"] + 1
-                else:
-                    # not at end of row, bump up column
-                    next_move["col"] = move["col"] + 1
-                    next_move["row"] = move["row"]
+            # last move was valid, proceed to next square that needs to be
+            # solved
+            square_to_check_idx = (move["row"] * board.width) + move["col"]
+
+            while (board.rows[square_to_check_idx // board.height][square_to_check_idx % board.width] != board.init_value):
+                square_to_check_idx += 1
+
+            next_move["row"] = square_to_check_idx // board.height
+            next_move["col"] = square_to_check_idx % board.width
+
+            # bump up the column unless we're at the end of a row
+            #if (move["col"] == (board.width - 1)):
+            #    # at end of row
+            #    next_move["col"] = 0
+            #    next_move["row"] = move["row"] + 1
+            #else:
+            #    # not at end of row, bump up column
+            #    next_move["col"] = move["col"] + 1
+            #    next_move["row"] = move["row"]
                     
-                next_move["value"] = 1
+            next_move["value"] = 1
 
         return next_move
         
