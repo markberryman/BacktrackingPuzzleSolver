@@ -102,6 +102,59 @@ def create_9x9_board():
 
     return board, first_move
 
+def create_6x6_board():
+    # returns pre-configured board and first move
+    board = backtrackingPuzzleSolver.board(6, 6, 0)
+
+    # set initial board #'s
+    board.rows[0][0] = 0
+    board.rows[0][1] = 5
+    board.rows[0][2] = 1
+    board.rows[0][3] = 6
+    board.rows[0][4] = 0
+    board.rows[0][5] = 2
+
+    board.rows[1][0] = 2
+    board.rows[1][1] = 0
+    board.rows[1][2] = 0
+    board.rows[1][3] = 0
+    board.rows[1][4] = 0
+    board.rows[1][5] = 0
+
+    board.rows[2][0] = 0
+    board.rows[2][1] = 0
+    board.rows[2][2] = 0
+    board.rows[2][3] = 0
+    board.rows[2][4] = 0
+    board.rows[2][5] = 4
+
+    board.rows[3][0] = 3
+    board.rows[3][1] = 0
+    board.rows[3][2] = 0
+    board.rows[3][3] = 0
+    board.rows[3][4] = 0
+    board.rows[3][5] = 0
+
+    board.rows[4][0] = 0
+    board.rows[4][1] = 0
+    board.rows[4][2] = 0
+    board.rows[4][3] = 0
+    board.rows[4][4] = 0
+    board.rows[4][5] = 1
+
+    board.rows[5][0] = 1
+    board.rows[5][1] = 0
+    board.rows[5][2] = 4
+    board.rows[5][3] = 2
+    board.rows[5][4] = 5
+    board.rows[5][5] = 0
+
+    # use a value of zero to trigger solver's attempt w/ a value of 1
+    first_move = { "row": 0, "col": 0, "value": 0, "is_good": False}
+
+    return board, first_move
+
+
 def create_3x3_board():
     # returns pre-configured board and first move
     board = backtrackingPuzzleSolver.board(3, 3, 0)
@@ -113,8 +166,9 @@ def create_3x3_board():
 
 
 sudoku = backtrackingPuzzleSolver.Sudoku()
-board, first_move = create_9x9_board()
+#board, first_move = create_9x9_board()
 #board, first_move = create_3x3_board()
+board, first_move = create_6x6_board()
 
 start_time = time.time()
 bps = backtrackingPuzzleSolver.BPS()
