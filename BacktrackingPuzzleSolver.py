@@ -1,73 +1,42 @@
-# todo - optimize by specifying subset of possible values for a square based on what's already been used
 # todo - figure out how to avoid passing entire board around w/ each attempt
-# todo - make sense to consolidate move validity check w/ making the move?
-# todo - move board creation to the puzzle logic?
-# todo - better way to indicate no possible move other than length check of dict?
-# todo - for sudoku, let's be explicit about the init value, min and max value; too much of a hack otherwise
 # todo - advantage of using numpy matrix over 2-d array made by lists?
 # todo - instead of board.rows property; make the board obj iterable?
 import copy
 
 
 class BPS(object):
-    """Given a 2-D board type puzzle, solves it using recursive backtracking."""
+    """Given a 2-D board type puzzle, solves it using recursion and backtracking."""
 
-    def solve(self, puzzle, board, move):
+    def solve(self, puzzle, board):
         if (puzzle.is_solved(board)):
             puzzle.print_board(board)
             return True
 
-        while (True):
-            print("*****************")
-            puzzle.print_board(board)
-            print("*****************")
-            move = puzzle.get_next_move(move, board)
+        # find next square to "solve"
+        # try all possible valid moves and recurse
+        possible_moves = puzzle.get_possible_moves(puzzle, board)
 
-            if (len(move) != 0):
-                print("Trying move: row - {}, col - {}, val - {}".format(move["row"], move["col"], move["value"]))
+        for move in possible_moves:
+            # need to copy the board so we don't have separate
+            # solution investigations stomp on each other
+            new_board = copy.deepcopy(board)
 
-                is_move_good = puzzle.is_move_valid(move, board)
-
-                if (is_move_good):
-                    #print("Move valid. Going to recurse.")
-
-                    puzzle.make_move(move, board)
-
-                    # need to copy the board so we don't have separate
-                    # solution investigations stomp on each other
-                    new_board = copy.deepcopy(board)
-
-                    was_puzzle_solved = self.solve(puzzle, new_board, move)
-
-                    if (was_puzzle_solved):
-                        return True
-                    else:
-                        # get the next move as the last one turned
-                        # out to be invalid
-                        move["is_good"] = False
-                else:
-                    # move not valid, going to try next move
-                    print("Move *not* good.")
-                    pass
-            else:
-                # we're stuck, can't make another move; bail on this
-                # solution search path
-                #print("Stuck. Backtracking...")
-                return False
+            puzzle.make_move(move, new_board)
             
-        # made it here, means we couldn't solve the puzzle
-        # down this current path of moves
+            puzzle_solved = self.solve(puzzle, new_board)
+
+            if (puzzle_solved):
+                return True
+
+        # couldn't solve puzzle
         return False
 
 
 class TwoDimBoardPuzzle(object):
-    def is_move_good(self, move, board):
-        raise NotImplementedError()
-
     def is_solved(self, board):
         raise NotImplementedError()
 
-    def get_next_move(self, last_move, board):
+    def get_possible_moves(self, puzzle, board):
         raise NotImplementedError()
 
     def make_move(self, move, board):
@@ -78,24 +47,6 @@ class TwoDimBoardPuzzle(object):
 
 
 class Sudoku(TwoDimBoardPuzzle):
-    def is_move_valid(self, move, board):
-        # besides checking the move's validity,
-        # we're going to flag the move as well b/c
-        # we need this info to determine the next move
-        
-        # checking for dupe in same column and row
-        col_conflict = (move["value"] not in [row[move["col"]] for row in board.rows])
-        row_conflict = (move["value"] not in board.rows[move["row"]])
-
-        result = col_conflict and row_conflict
-
-        #result = ((move["value"] not in [row[move["col"]] for row in board.rows]) and
-        #          (move["value"] not in board.rows[move["row"]]))
-
-        move["is_good"] = result
-
-        return result
-
     def is_solved(self, board):
         # board filled with valid values (i.e., no initialization values present)
         for row in board.rows:
@@ -104,31 +55,59 @@ class Sudoku(TwoDimBoardPuzzle):
 
         return True
 
-    def get_next_move(self, move, board):
-        next_move = {}
+    def get_possible_moves(self, puzzle, board):        
+        unsolved_row = None
+        unsolved_col = None
+        possible_moves = []
 
-        # if the last move was not valid, we'll stay 
-        # in the same square but try the next largest number (if possible)
-        if (move["is_good"] is False):
-            if (move["value"] < board.width):
-                # try the next value for this current location
-                next_move["col"] = move["col"]
-                next_move["row"] = move["row"]
-                next_move["value"] = move["value"] + 1
-            # else, no next move for this square; out of values to try
-        else:
-            # last move was valid, proceed to next square that needs to be
-            # solved
-            square_to_check_idx = (move["row"] * board.width) + move["col"]
+        # figure out next square to solve
+        for row in range(board.height):
+            for col in range(board.width):
+                if (board.rows[row][col] == board.init_value):
+                    unsolved_row = row
+                    unsolved_col = col
+                    break
 
-            while (board.rows[square_to_check_idx // board.height][square_to_check_idx % board.width] != board.init_value):
-                square_to_check_idx += 1
+            if (unsolved_row is not None):
+                break
+        
+        # possible moves for a sqaure includes all values not
+        # already used in the current row, column or sub-region
+        possible_values = [v for v in range(1, board.width + 1)]
 
-            next_move["row"] = square_to_check_idx // board.height
-            next_move["col"] = square_to_check_idx % board.width                    
-            next_move["value"] = 1
+        # removing row conflicts
+        for row_val in board.rows[unsolved_row]:
+            if row_val in possible_values:
+                possible_values.remove(row_val)
+        
+        # removing col conflicts
+        for col_val in [row[unsolved_col] for row in board.rows]:
+            if col_val in possible_values:
+                possible_values.remove(col_val)
 
-        return next_move
+        # removing sub-region conflicts
+        # determine boundaries of sub-region
+        col_sub_region = unsolved_col // board.sub_region_width
+        row_sub_region = unsolved_row // board.sub_region_height
+
+        sub_region_left_col = col_sub_region * board.sub_region_width
+        sub_region_right_col = sub_region_left_col + (board.sub_region_width - 1)
+        sub_region_top_row = row_sub_region * board.sub_region_height        
+        sub_region_bottom_row = sub_region_top_row + (board.sub_region_height - 1)
+
+        for row in range(sub_region_top_row, sub_region_bottom_row + 1):
+            for col in range(sub_region_left_col, sub_region_right_col + 1):
+                if (board.rows[row][col] in possible_values):
+                    possible_values.remove(board.rows[row][col])
+
+        for possible_value in possible_values:
+            move = {}
+            move["row"] = unsolved_row
+            move["col"] = unsolved_col                    
+            move["value"] = possible_value
+            possible_moves.append(move)
+
+        return possible_moves
         
     def make_move(self, move, board):
         board.rows[move["row"]][move["col"]] = move["value"]
@@ -141,7 +120,7 @@ class Sudoku(TwoDimBoardPuzzle):
             print()
 
 
-class board(object):
+class TwoDimensionalBoard(object):
     def __init__(self, width, height, init_value):
         self._board = [[init_value for x in range(width)] for x in range(height)]
         self._width = width
@@ -163,3 +142,17 @@ class board(object):
     @property
     def rows(self):
         return self._board
+
+class SudokuBoard(TwoDimensionalBoard):
+    def __init__(self, width, height, sub_region_width, sub_region_height, init_value):
+        super(SudokuBoard, self).__init__(width, height, init_value)        
+        self._sub_region_width = sub_region_width
+        self._sub_region_height = sub_region_height
+        
+    @property
+    def sub_region_width(self):
+        return self._sub_region_width
+
+    @property
+    def sub_region_height(self):
+        return self._sub_region_height
